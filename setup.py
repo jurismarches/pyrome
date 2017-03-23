@@ -14,7 +14,9 @@ setup(
     author='Jurismarches',
     author_email='contact@jurismarches.com',
     url='https://github.com/jurismarches/pyrome',
-    packages=['pyrome',],
+    packages=['pyrome'],
+    install_requires=[
+        'peewee>=2.9.1'],
     classifiers=[
         'Development Status :: 3 - Alpha',
         'License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)',

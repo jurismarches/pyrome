@@ -59,31 +59,42 @@ class Rome(BaseModel):
     code_rome = pw.CharField()
     libelle = pw.CharField()
 
+    @staticmethod
+    def full_prefetch(query):
+        """full prefetch of corelated tables
+        """
+        return pw.prefetch(
+            query,
+            RomeAppellation.select(RomeAppellation, Appellation).join(Appellation),
+            RomeEnvTravail.select(RomeEnvTravail, EnvTravail).join(EnvTravail),
+            RomeActivite.select(RomeActivite, Activite).join(Activite),
+            RomeCompetence.select(RomeCompetence, Competence).join(Competence))
+
 
 class RomeAppellation(BaseModel):
-    rome = pw.ForeignKeyField(Rome, related_name="rome_appelation")
-    appellation = pw.ForeignKeyField(Rome, related_name="appelation_rome")
+    rome = pw.ForeignKeyField(Rome, related_name="rome_appellation")
+    appellation = pw.ForeignKeyField(Appellation, related_name="appellation_rome")
     priorisation = pw.IntegerField()
 
 
 class RomeEnvTravail(BaseModel):
-    rome = pw.ForeignKeyField(Rome, related_name="rome_env_travail"),
-    env_travail = pw.ForeignKeyField(Rome, related_name="env_travail_rome")
+    rome = pw.ForeignKeyField(Rome, related_name="rome_env_travail")
+    env_travail = pw.ForeignKeyField(EnvTravail, related_name="env_travail_rome")
     priorisation = pw.IntegerField()
     bloc = pw.IntegerField(null=True)
 
 
 class RomeActivite(BaseModel):
     rome = pw.ForeignKeyField(Rome, related_name="rome_activite")
-    activite = pw.ForeignKeyField(Rome, related_name="activite_rome")
+    activite = pw.ForeignKeyField(Activite, related_name="activite_rome")
     position = pw.IntegerField(),
     priorisation = pw.IntegerField(),
     bloc = pw.IntegerField(null=True)
 
 
 class RomeCompetence(BaseModel):
-    rome = pw.ForeignKeyField(Rome, related_name="rome_competence"),
-    competence = pw.ForeignKeyField(Rome, related_name="competence_rome")
+    rome = pw.ForeignKeyField(Rome, related_name="rome_competence")
+    competence = pw.ForeignKeyField(Competence, related_name="competence_rome")
     position = pw.IntegerField()
     priorisation = pw.IntegerField()
     bloc = pw.IntegerField(null=True)
@@ -93,14 +104,14 @@ class Mobilite(BaseModel):
     TYPE = [
         (0, "proche"),
         (1, "si_evolution")]
-    origine_rome = pw.ForeignKeyField(Rome, related_name="mobilite_origine"),
-    cible_rome = pw.ForeignKeyField(Rome, related_name="mobilite_cible"),
+    origine_rome = pw.ForeignKeyField(Rome, related_name="mobilite_origine")
+    cible_rome = pw.ForeignKeyField(Rome, related_name="mobilite_cible")
     type = pw.IntegerField(choices=TYPE)
 
 
 class Fiche(BaseModel):
     numero = pw.IntegerField(null=True)
-    rome = pw.ForeignKeyField(Rome, related_name="rome")
+    rome = pw.ForeignKeyField(Rome, related_name="fiche")
     definition = pw.CharField(),
     formations_associees = pw.CharField(),
     condition_exercice_activite = pw.CharField(),
