@@ -1,4 +1,4 @@
-Pyrome
+pyrome
 ======
 
 A package to work with

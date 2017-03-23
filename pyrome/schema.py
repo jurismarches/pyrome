@@ -1,114 +1,146 @@
+import peewee as pw
 
 
-class FK:
-    """a foreign key"""
+rome_db = pw.SqliteDatabase(None)
 
 
-class PK:
-    """a primary key"""
+class BaseModel(pw.Model):
+
+    class Meta:
+        database = rome_db
 
 
-class PFK(PK, FK):
-    """A primary key and foreign key"""
-
-
-class Schema:
-    """Data schema
+class Ogr(BaseModel):
+    """All Ogr objects are linked to this table
     """
 
-    ogr__type = {
-        0: "rome",
-        1: "env_travail",
-        2: "competence",
-        3: "appellation",
-        4: "activite",
-        5: "arborescence"}
+    TYPE = (
+        (0, "rome"),
+        (1, "env_travail"),
+        (2, "competence"),
+        (3, "appellation"),
+        (4, "activite"),
+        (5, "arborescence"))
 
-    ogr = {
-        "code": PK,
-        "type": int}
+    code = pw.PrimaryKeyField()
+    type = pw.IntegerField(choices=TYPE)
 
-    env_travail = {
-        "ogr_oid": PFK,
-        "libelle_environnement": str,
-        "libelle": str}
 
-    competence = {
-        "ogr_oid": PFK,
-        "libelle_competence": str,
-        "libelle": str}
+class EnvTravail(BaseModel):
+    ogr = pw.ForeignKeyField(Ogr, related_name="env_travail", primary_key=True)
+    libelle_environnement = pw.CharField()
+    libelle = pw.CharField()
 
-    appellation = {
-        "ogr_oid": PFK,
-        "libelle_appellation": str,
-        "libelle": str,
-        "libelle_court": str}
 
-    activite = {
-        "ogr_oid": PFK,
-        "libelle_activite": str,
-        "libelle": str,
-        "libelle_application": str,
-        "libelle_en_tete_rgpmt": str,
-        "libelle_impression": str}
+class Competence(BaseModel):
+    ogr = pw.ForeignKeyField(Ogr, related_name="competence", primary_key=True)
+    libelle_competence = pw.CharField()
+    libelle = pw.CharField()
 
-    rome = {
-        "ogr_oid": PFK,
-        "code_rome": str,
-        "libelle": str}
 
-    rome_appellation = {
-        "rome_oid": FK,
-        "appellation_oid": FK,
-        "priorisation": int}
+class Appellation(BaseModel):
+    ogr = pw.ForeignKeyField(Ogr, related_name="appellation", primary_key=True)
+    libelle_appellation = pw.CharField()
+    libelle = pw.CharField()
+    libelle_court = pw.CharField()
 
-    rome_env_travail = {
-        "rome_oid": FK,
-        "env_travail_oid": FK,
-        "priorisation": int,
-        "bloc": int}
 
-    rome_activite = {
-        "rome_oid": FK,
-        "activite_oid": FK,
-        "position": int,
-        "priorisation": int,
-        "bloc": int}
+class Activite(BaseModel):
+    ogr = pw.ForeignKeyField(Ogr, related_name="activite", primary_key=True)
+    libelle_activite = pw.CharField()
+    libelle = pw.CharField()
+    libelle_application = pw.CharField(null=True)
+    libelle_en_tete_rgpmt = pw.CharField(null=True)
+    libelle_impression = pw.CharField(null=True)
 
-    rome_competence = {
-        "rome_oid": FK,
-        "competence_oid": FK,
-        "position": int,
-        "priorisation": int,
-        "bloc": int}
 
-    mobilite = {
-      "origine_rome_oid": FK,
-      "cible_rome_oid": FK,
-      "type": int}
+class Rome(BaseModel):
+    ogr = pw.ForeignKeyField(Ogr, related_name="rome", primary_key=True)
+    code_rome = pw.CharField()
+    libelle = pw.CharField()
 
-    fiche = {
-        "num": int,
-        "rome_oid": FK,
-        "definition": str,
-        "formations_associees": str,
-        "condition_exercice_activite": str,
-        "classement_emploi_metier": str}
 
-    arborescence__type_noeud = {
-        0: "RACINE",
-        1: "NOEUD",
-        2: "FEUILLE"}
+class RomeAppellation(BaseModel):
+    rome = pw.ForeignKeyField(Rome, related_name="rome_appelation")
+    appellation = pw.ForeignKeyField(Rome, related_name="appelation_rome")
+    priorisation = pw.IntegerField()
 
-    referentiel = {
-        "libelle": str}
 
-    arborescence = {
-        "ogr_oid": FK,
-        "pere_ogr_oid": FK,
-        "referentiel_oid": FK,
-        "item_ogr_oid": FK,
-        "item_type": int, 
-        "type_noeud": int,
-        "code_noeud": str,
-        "libelle": str}
+class RomeEnvTravail(BaseModel):
+    rome = pw.ForeignKeyField(Rome, related_name="rome_env_travail"),
+    env_travail = pw.ForeignKeyField(Rome, related_name="env_travail_rome")
+    priorisation = pw.IntegerField()
+    bloc = pw.IntegerField(null=True)
+
+
+class RomeActivite(BaseModel):
+    rome = pw.ForeignKeyField(Rome, related_name="rome_activite")
+    activite = pw.ForeignKeyField(Rome, related_name="activite_rome")
+    position = pw.IntegerField(),
+    priorisation = pw.IntegerField(),
+    bloc = pw.IntegerField(null=True)
+
+
+class RomeCompetence(BaseModel):
+    rome = pw.ForeignKeyField(Rome, related_name="rome_competence"),
+    competence = pw.ForeignKeyField(Rome, related_name="competence_rome")
+    position = pw.IntegerField()
+    priorisation = pw.IntegerField()
+    bloc = pw.IntegerField(null=True)
+
+
+class Mobilite(BaseModel):
+    TYPE = [
+        (0, "proche"),
+        (1, "si_evolution")]
+    origine_rome = pw.ForeignKeyField(Rome, related_name="mobilite_origine"),
+    cible_rome = pw.ForeignKeyField(Rome, related_name="mobilite_cible"),
+    type = pw.IntegerField(choices=TYPE)
+
+
+class Fiche(BaseModel):
+    numero = pw.IntegerField(null=True)
+    rome = pw.ForeignKeyField(Rome, related_name="rome")
+    definition = pw.CharField(),
+    formations_associees = pw.CharField(),
+    condition_exercice_activite = pw.CharField(),
+    classement_emploi_metier = pw.CharField()
+
+
+class Referentiel(BaseModel):
+    ogr = pw.ForeignKeyField(Ogr, primary_key=True, related_name="referentiel")
+    libelle = pw.CharField()
+
+
+class Arborescence(BaseModel):
+    TYPE_NOEUD = (
+        (0, "RACINE"),
+        (1, "NOEUD"),
+        (2, "FEUILLE"))
+
+    ogr = pw.ForeignKeyField(Ogr, primary_key=True, related_name="arborescence")
+    pere = pw.ForeignKeyField('self', related_name="fils", null=True)
+    referentiel = pw.ForeignKeyField(Referentiel, related_name="noeuds")
+    item_ogr = pw.ForeignKeyField(Ogr, related_name="noeuds", null=True)
+    type_noeud = pw.IntegerField(choices=TYPE_NOEUD)
+    code_noeud = pw.CharField()
+    libelle = pw.CharField()
+
+
+class RomeDB:
+    """a context manager to configure and connect database
+    """
+
+    def __init__(self, *args):
+        rome_db.init(*args)
+
+    def __enter__(self):
+        rome_db.connect()
+        return rome_db
+
+    def __exit__(self, *args, **kwargs):
+        rome_db.close()
+
+
+ogr_type_model = {
+    0: Rome, 1: EnvTravail, 2: Competence, 3: Appellation, 4: Activite, 5: Arborescence}
