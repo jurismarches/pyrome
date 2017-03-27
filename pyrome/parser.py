@@ -40,7 +40,7 @@ class Loader:
         s.Arborescence: {
             "ogr": "code_ogr",
             "pere": "code_ogr_pere",
-            "item": "code_item_arbor_associe"}}
+            "item_ogr": "code_item_arbor_associe"}}
 
     def _batched(self, iterator):
         while True:
@@ -158,23 +158,37 @@ class Loader:
             self.insert_data(s.Fiche, data)
 
     def load_arborescence(self, content):
+        """Load arborescence table
+        """
         noeud_to_type = {v: k for k, v in s.Arborescence.TYPE_NOEUD}
+
+        # we need a first pass to map code to id, to have pere as a key
+        code_to_ogr_id = {}
         referentiel_label_to_id = {}
+        for d in self.iter_data(content):
+            code_to_ogr_id[d["code_noeud"]] = d["code_ogr"]
+            if not d["code_pere"] or not d["code_pere"].strip():
+                referentiel_label_to_id[d["libelle_referentiel"]] = d["code_ogr"]
+
         iterator = self.iter_transform(self.iter_data(content), s.Arborescence)
         for data in self._batched(iterator):
-            # transform
             referentiel_data = []
+            # transform
             for d in data:
-                if not d["item_ogr"]:
+                if not d["item_ogr"] or d["item_ogr"] == "0":
                     d["item_ogr"] = None
-                if not d["code_ogr_pere"] or not d["code_ogr_pere"].strip():
+                if not d["code_pere"] or not d["code_pere"].strip():
+                    # root
                     d["pere"] = None
-                    referentiel_label_to_id[d["libelle_referentiel"]] = d["ogr"]
                     referentiel_data.append(
                         {"ogr": d["ogr"], "libelle": d["libelle_referentiel"]})
+                else:
+                    # get pere
+                    d["pere"] = code_to_ogr_id[d["code_pere"]]
                 d["referentiel"] = referentiel_label_to_id[d["libelle_referentiel"]]
                 d["type_noeud"] = noeud_to_type[d["libelle_noeud"]]
-            self.insert_data(s.Referentiel, referentiel_data)
+            if referentiel_data:
+                self.insert_data(s.Referentiel, referentiel_data)
             self.insert_data(s.Arborescence, data)
 
     def __call__(self, zip_path, db_path):

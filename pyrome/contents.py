@@ -16,7 +16,7 @@ class AttrDict(dict):
 
 
 def simple_to_dict(obj):
-    return AttrDict(obj._data)
+    return dict(obj._data)
 
 
 def _relation_to_dict_factory(model, rel_model, rel_name):
@@ -25,7 +25,7 @@ def _relation_to_dict_factory(model, rel_model, rel_name):
 
     def relation_to_dict(obj):
         related = getattr(obj, rel_name)
-        data = AttrDict((k, v) for k, v in obj._data.items() if k in fields)
+        data = dict((k, v) for k, v in obj._data.items() if k in fields)
         data.update((k, v) for k, v in related._data.items() if k in rel_fields)
         return data
 
@@ -47,7 +47,7 @@ _fiche_fields = _fnames(s.Fiche)
 
 
 def rome_to_dict(obj):
-    data = AttrDict((k, v) for k, v in obj._data.items() if k in _rome_fields)
+    data = dict((k, v) for k, v in obj._data.items() if k in _rome_fields)
     fiche = list(obj.fiche)
     if fiche:
         data.update((k, v) for k, v in fiche[0]._data.items() if k in _fiche_fields)
@@ -59,7 +59,7 @@ def rome_to_dict(obj):
 
 
 def prefetched_rome_to_dict(obj):
-    data = AttrDict((k, v) for k, v in obj._data.items() if k in _rome_fields)
+    data = dict((k, v) for k, v in obj._data.items() if k in _rome_fields)
     fiche = list(obj.fiche)
     if fiche:
         data.update((k, v) for k, v in obj.fiche[0]._data.items() if k in _fiche_fields)
@@ -67,6 +67,20 @@ def prefetched_rome_to_dict(obj):
     data["activite"] = [rome_activite_to_dict(r) for r in obj.rome_activite_prefetch]
     data["competence"] = [rome_competence_to_dict(r) for r in obj.rome_competence_prefetch]
     data["env_travail"] = [rome_env_travail_to_dict(r) for r in obj.rome_env_travail_prefetch]
+    return data
+
+
+_arborescence_fields = ["ogr_id", "code_noeud", "libelle"]
+_ogr_type_to_relation = dict(s.Ogr.TYPE)
+
+
+def arborescence_to_dict(obj):
+    data = {k: v for k, v in obj._data.items() if k in _arborescence_fields}
+    if obj.item_ogr_id:
+        item_ogr = obj.item_ogr
+        rel_name = _ogr_type_to_relation[item_ogr.type]
+        item_obj = getattr(item_ogr, rel_name)
+        data[rel_name] = to_dict(item_obj)
     return data
 
 
@@ -80,7 +94,8 @@ MODEL_TO_DICT = {
     s.RomeCompetence: rome_competence_to_dict,
     s.RomeEnvTravail: rome_env_travail_to_dict,
     s.Fiche: simple_to_dict,
-    s.Rome: rome_to_dict}
+    s.Rome: rome_to_dict,
+    s.Arborescence: arborescence_to_dict}
 
 
 PREFETCH_MODEL_TO_DICT = copy.copy(MODEL_TO_DICT)
