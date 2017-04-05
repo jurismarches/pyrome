@@ -22,4 +22,6 @@ setup(
         'License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)',
         'Intended Audience :: Developers',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 3.4'])
+        'Programming Language :: Python :: 3.4',
+        'Natural Language :: French',
+        ])
